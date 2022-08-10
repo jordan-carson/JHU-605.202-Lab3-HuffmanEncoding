@@ -40,7 +40,7 @@ class HuffmanNode:
         return self.freq >= other.freq
 
 
-class HuffmanCodes:
+class HuffmanTree:
     def __init__(self):
         self.code_dict = None
         self.head = None
@@ -78,6 +78,15 @@ class HuffmanCodes:
             for i in self.head.char_dict.items():
                 length, code = self.get_code(i, self.head)
                 print(f"'{i}'\t\t{code}\t\t{code:0{length}b}")
+
+    def to_output(self):
+        """Prints a table of all characters, codes, and code lengths found in the input"""
+        res = dict()
+        if self.char_dict is not None:
+            for i in self.head.char_dict.items():
+                length, code = self.get_code(i, self.head)
+                res[code] = length
+        return res
 
     def build_tree(self):
 
@@ -151,3 +160,25 @@ class HuffmanCodes:
                 return self.get_coded_string(char, node.right) + "1" if not reversal \
                     else "1" + self.get_coded_string(char, node.right)
         return ""
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--tie_breaker", choices=['DEFAULT', "MIRROR"], default="default")
+    parser.add_argument("--run_default", default=True)
+
+    # if run default is selected will use the given input files
+    args = parser.parse_args()
+
+    if args.run_default is True:
+
+        task = HuffmanTree()
+        task.build_tree()
+        task.print_code_table()
+
+
+if __name__ == "__main__":
+    main()
