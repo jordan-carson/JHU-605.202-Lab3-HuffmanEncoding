@@ -5,7 +5,7 @@ class QueueNode:
         self.prev = p
 
 
-class PriorityQueue:
+class PriorityQueueReq:
     def __init__(self):
         self.head = None
         self.len = 0
@@ -60,3 +60,95 @@ class PriorityQueue:
 
     def __repr__(self):
         return repr(self.to_array())
+
+
+class QNode:
+    def __init__(self, n):
+        self.n = n
+        self.prev = None
+        self.next = None
+
+
+class PriorityQueue:
+    def __init__(self):
+        self.front = None
+        self.rear = None
+        self.size = 0
+
+    def enqueue(self, node):
+        # Create a dynamic node
+        node = QNode(node)
+        node.n = node
+
+        if self.front is None:
+            #  When adding a first node of queue
+            self.front = node
+            self.rear = node
+
+        elif self.front.n.first >= node.first:
+            #  Add node at beginning position
+            node.next = self.front
+            self.front.prev = node
+            self.front = node
+
+        elif self.rear.n.first <= node.first:
+            #  Add node at last position
+            node.prev = self.rear
+            self.rear.next = node
+            self.rear = node
+        else:
+            temp = self.front
+            #  Find the location of inserting priority node
+            while temp.n.first < node.first:
+                temp = temp.next
+
+            #  Add node
+            node.next = temp
+            node.prev = temp.prev
+            temp.prev = node
+            if node.prev is not None:
+                node.prev.next = node
+
+        self.size = self.size + 1
+
+    def is_empty(self):
+        if self.size == 0:
+            return True
+        else:
+            return False
+
+    #  Get a front element of queue
+    def peek(self):
+        if self.is_empty():
+            #  When Queue is empty
+            print("\n Empty Queue ")
+            return None
+        else:
+            return self.front.n
+
+    def is_size(self):
+        return self.size
+
+    def dequeue(self):
+        if not self.is_empty():
+            temp = self.front
+            temp.n = None
+            if (self.front == self.rear):
+                #  When queue contains only one node
+                self.rear = None
+                self.front = None
+            else:
+                self.front = self.front.next
+                self.front.prev = None
+
+            #  Change queue size
+            self.size -= 1
+
+    def print_queue(self):
+        node = self.front
+        print("\n Queue Element ", end="")
+        while node is not None:
+            print("\n ", node.n.first, " ", node.n.second, end="")
+            node = node.next
+
+        print(end="\n")

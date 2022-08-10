@@ -1,95 +1,153 @@
 from core.constants import Constants
 from helpers import get_frequencies, get_encoded
+from tree import PriorityQueueReq
 
-import heapq
 
+class HuffmanNodeDirectional:
+    """
+    This is a TreeNode or a Huffman Node that starts with a character and frequency. Freq as counts of the letters in
+    input text is also a norm.
+    """
 
-class HuffmanNode:
-    def __init__(self, freq, char, left=None, right=None):
-        self.freq = freq # data or something similar, these are probabilities
+    def __init__(self, char, freq, left=None, right=None):
         self.char = char
+        self.freq = freq  # data or something similar, these are probabilities
         self.left = left
         self.right = right
-
         self.direction = ""
 
 
-frequencies = get_frequencies(Constants.FREQUENCIES)
-input_text = get_encoded(Constants.INPUT_TEXT)
+class HuffmanNode:
+    def __init__(self, character, freq=0, left=None, right=None):
+        self.character = character
+        self.freq = freq
+        self.left = left
+        self.right = right
 
-for idx, sentence in enumerate(input_text):
+    def __repr__(self):
+        return f"<HuffmanNode: char_list='{self.character}', freq={self.freq}, left={self.left}, right={self.right}>"
 
-    for character in sentence:
-        print(character)
+    def __lt__(self, other):
+        return self.freq < other.freq
 
-    if idx == 0:
-        break
+    def __le__(self, other):
+        return self.freq <= other.freq
+
+    def __gt__(self, other):
+        return self.freq > other.freq
+
+    def __ge__(self, other):
+        return self.freq >= other.freq
 
 
-class HuffmanTree:
-
+class HuffmanCodes:
     def __init__(self):
-        self.root = None
+        self.code_dict = None
+        self.head = None
+
+    def __repr__(self):
+        return "<HuffmanTree: head={}>".format(self.head)
 
     @staticmethod
-    def is_leaf(root: HuffmanNode):
-        return root.left is None and root.right is None
+    def get_frequencies():
+        return get_frequencies(Constants.FREQUENCIES)
 
-    def encode(self, root: HuffmanNode, inp_str, huffman_code: dict):
-        if root is None:
+    @staticmethod
+    def get_input_text(file):
+        return get_encoded(filename=file)
+
+    @staticmethod
+    def merge_nodes(one, two):
+        return HuffmanNode(one.character + two.character, one.freq + two.freq, one, two)
+
+    #  Display Huffman code
+    def print_tree(self, node, result):
+        if node is None:
             return
 
-        if self.is_leaf(root):
-            # what the heck is huffman_code?
-            huffman_code.put(root.char, inp_str if len(inp_str) > 0 else "1")
-
-        self.encode(root.left, inp_str + "0", huffman_code)
-        self.encode(root.right, inp_str + "1", huffman_code)
-
-    def decode(self, root, index):
-
-        if root is None:
-            return index
-
-        if self.is_leaf(root):
-            print(root.char)
-            return index
-
-        index += 1
-        root = root.left if root.char[index] == '0' else root.right
-        index = self.decode(root, index)
-        return index
-
-    def build_tree(self, text):
-        """
-        Base function to build the Huffman Tree, decoding the given input text, etc.
-        Args:
-            text:
-
-        Returns:
-
-        """
-        if text is None or len(text) == 0: # base case
+        if node.left is None and node.right is None:
+            print("\n ", node.right, " ", result, end="")
             return
 
-    def build_tree_from_frequencies(self):
-        minheap = list()
-        frequencies = get_frequencies(Constants.FREQUENCIES)
+        self.print_tree(node.left, result + "0")
+        self.print_tree(node.right, result + "1")
 
-        for k, v in frequencies.items():
-            heapq.heappush(minheap, HuffmanNode(v, k))
+    def print_code_table(self):
+        """Prints a table of all characters, codes, and code lengths found in the input"""
+        if self.char_dict is not None:
+            for i in self.head.char_dict.items():
+                length, code = self.get_code(i, self.head)
+                print(f"'{i}'\t\t{code}\t\t{code:0{length}b}")
 
+    def build_tree(self):
 
-        while len(minheap) > 1:
-            left = heapq.heappop(minheap)
+        queue = PriorityQueueReq()
 
+        for letter, frequency in self.get_frequencies().items():
+            root = HuffmanNode(letter, frequency)
+            queue.push(root)
 
+        left: HuffmanNode = queue.pop()
+        right: HuffmanNode = queue.pop()
 
+        while left and right:
+            # loop through until necessary, combine nodes as necessary from PriorityQueue
+            queue.push(self.merge_nodes(left, right))
+            left = queue.pop()
+            right = queue.pop()
 
+        self.head = left
 
+        # create a memorized cache or lru_cache so we can efficiently return results without traversing.
+        self.code_dict = {}
+        for c in self.head.character:
+            self.code_dict[c] = self.get_code(c)
 
+        return
 
+    def decoder(self, encoded_text):
+        current_code = ""
+        decoded_text = ""
 
+        for bit in encoded_text:
+            current_code += bit
+            if current_code in self.code_dict:
+                character = self.code_dict[current_code]
+                decoded_text += character
+                current_code = ""
 
+        return decoded_text
 
+    def encoder(self, text):
+        result = ""
 
+        for i in text:
+            if i in self.code_dict:
+                result += self.get_code(i)
+            # insert
+        return result
+
+    def get_code(self, s, node, code=''):
+        if node.left is None and node.right is None:
+            return code
+        else:
+            temp = ''
+            if node.left is not None:
+                temp = self.get_code(s, node.left, code+'0')
+            if not temp and node.right is not None:
+                temp = self.get_code(s, node.right, code+'1')
+            return temp
+
+    def get_coded_string(self, char, node=None, reversal=False):
+        if node is None:
+            node = self.head
+        if node.left is not None:
+            if char in node.left.char_list:
+                return self.get_coded_string(char, node.left) + "0" if not reversal \
+                    else "0" + self.get_coded_string(char, node.left)
+
+        if node.right is not None:
+            if char in node.right.char_list:
+                return self.get_coded_string(char, node.right) + "1" if not reversal \
+                    else "1" + self.get_coded_string(char, node.right)
+        return ""
